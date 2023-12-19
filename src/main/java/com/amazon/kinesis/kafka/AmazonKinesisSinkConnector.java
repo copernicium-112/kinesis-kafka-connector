@@ -124,6 +124,7 @@ public class AmazonKinesisSinkConnector extends SinkConnector {
 		outstandingRecordsThreshold = props.get(OUTSTANDING_RECORDS_THRESHOLD);
 		sleepPeriod = props.get(SLEEP_PERIOD);
 		sleepCycles = props.get(SLEEP_CYCLES);
+		System.out.println("printing props: "+props);
 	}
 
 	@Override
