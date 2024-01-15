@@ -14,6 +14,10 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.kinesis.producer.Attempt;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
@@ -54,6 +58,14 @@ public class AmazonKinesisSinkTask extends SinkTask {
 
 	private String metricsNameSpace;
 
+	private String awsAccesskeyID;
+
+	private String awsSecretKey;
+
+	private String awsCloudWatchEndpoint;
+
+	private String awsCloudWatchPort;
+
 	private boolean aggregation;
 
 	private boolean usePartitionAsHashKey;
@@ -83,8 +95,9 @@ public class AmazonKinesisSinkTask extends SinkTask {
 		public void onFailure(Throwable t) {
 			if (t instanceof UserRecordFailedException) {
 				Attempt last = Iterables.getLast(((UserRecordFailedException) t).getResult().getAttempts());
-				putException =  new RetriableException("Kinesis Producer was not able to publish data - " + last.getErrorCode() + "-"
-						+ last.getErrorMessage());
+				putException = new RetriableException(
+						"Kinesis Producer was not able to publish data - " + last.getErrorCode() + "-"
+								+ last.getErrorMessage());
 				return;
 			}
 			putException = new RetriableException("Exception during Kinesis put", t);
@@ -122,6 +135,23 @@ public class AmazonKinesisSinkTask extends SinkTask {
 				kinesisProducer.flushSync();
 			else
 				kinesisProducer.flush();
+		}
+	}
+
+	private AWSCredentialsProvider createCredentialsUsingAWSKeys(String awsAccesskeyID, String awsSecretKey) {
+
+		// If AWS Access Key ID and Secret Key are provided via kinesis.properties
+		// then use them to create credentials provider
+		// else use DefaultAWSCredentialsProviderChain
+
+		if (awsAccesskeyID != null && awsSecretKey != null) {
+			System.out.println(
+					"AWS Access Key ID and Secret Key were provided via Kinesis Config. Hence, the AWSStaticCredentialsProvider will be used.");
+			return new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsAccesskeyID, awsSecretKey));
+		} else {
+			System.out.println(
+					"Neither RoleARN nor AWS Access Key ID and Secret Key were provided via Kinesis Config. Hence, the DefaultAWSCredentialsProviderChain will be used.");
+			return new DefaultAWSCredentialsProviderChain();
 		}
 	}
 
@@ -170,7 +200,8 @@ public class AmazonKinesisSinkTask extends SinkTask {
 					while (producer.getOutstandingRecordsCount() > outstandingRecordsThreshold) {
 						try {
 							// Pausing further
-							sinkTaskContext.pause((TopicPartition[]) sinkTaskContext.assignment().toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
+							sinkTaskContext.pause((TopicPartition[]) sinkTaskContext.assignment()
+									.toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
 							pause = true;
 							Thread.sleep(sleepPeriod);
 							if (sleepCount++ > sleepCycles) {
@@ -180,6 +211,8 @@ public class AmazonKinesisSinkTask extends SinkTask {
 								// but are not being sent
 								System.out.println(
 										"Kafka Consumption has been stopped because Kinesis Producers has buffered messages above threshold");
+								System.out.println(
+										"number of outstanding records: " + producer.getOutstandingRecordsCount());
 								sleepCount = 0;
 							}
 						} catch (InterruptedException e) {
@@ -188,7 +221,8 @@ public class AmazonKinesisSinkTask extends SinkTask {
 						}
 					}
 					if (pause)
-						sinkTaskContext.resume((TopicPartition[]) sinkTaskContext.assignment().toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
+						sinkTaskContext.resume((TopicPartition[]) sinkTaskContext.assignment()
+								.toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
 				});
 				return true;
 			} else {
@@ -200,7 +234,8 @@ public class AmazonKinesisSinkTask extends SinkTask {
 				while (kinesisProducer.getOutstandingRecordsCount() > outstandingRecordsThreshold) {
 					try {
 						// Pausing further
-						sinkTaskContext.pause((TopicPartition[]) sinkTaskContext.assignment().toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
+						sinkTaskContext.pause((TopicPartition[]) sinkTaskContext.assignment()
+								.toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
 						pause = true;
 						Thread.sleep(sleepPeriod);
 						if (sleepCount++ > sleepCycles) {
@@ -210,6 +245,8 @@ public class AmazonKinesisSinkTask extends SinkTask {
 							// but are not being sent
 							System.out.println(
 									"Kafka Consumption has been stopped because Kinesis Producers has buffered messages above threshold");
+							System.out.println(
+									"number of outstanding records: " + kinesisProducer.getOutstandingRecordsCount());
 							sleepCount = 0;
 						}
 					} catch (InterruptedException e) {
@@ -218,7 +255,8 @@ public class AmazonKinesisSinkTask extends SinkTask {
 					}
 				}
 				if (pause)
-					sinkTaskContext.resume((TopicPartition[]) sinkTaskContext.assignment().toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
+					sinkTaskContext.resume((TopicPartition[]) sinkTaskContext.assignment()
+							.toArray(new TopicPartition[sinkTaskContext.assignment().size()]));
 				return true;
 			}
 		} else {
@@ -227,7 +265,8 @@ public class AmazonKinesisSinkTask extends SinkTask {
 	}
 
 	/**
-	 * Examine whether an exception was reported from an earlier call to <code>put</code>.
+	 * Examine whether an exception was reported from an earlier call to
+	 * <code>put</code>.
 	 * If so, then clear the exception and surface it up to Kafka Connect.
 	 */
 	private void checkForEarlierPutException() {
@@ -272,7 +311,7 @@ public class AmazonKinesisSinkTask extends SinkTask {
 
 		roleSessionName = props.get(AmazonKinesisSinkConnector.ROLE_SESSION_NAME);
 
-		roleDurationSeconds =  Integer.parseInt(props.get(AmazonKinesisSinkConnector.ROLE_DURATION_SECONDS));
+		roleDurationSeconds = Integer.parseInt(props.get(AmazonKinesisSinkConnector.ROLE_DURATION_SECONDS));
 
 		roleExternalID = props.get(AmazonKinesisSinkConnector.ROLE_EXTERNAL_ID);
 
@@ -301,6 +340,14 @@ public class AmazonKinesisSinkTask extends SinkTask {
 		sleepPeriod = Integer.parseInt(props.get(AmazonKinesisSinkConnector.SLEEP_PERIOD));
 
 		sleepCycles = Integer.parseInt(props.get(AmazonKinesisSinkConnector.SLEEP_CYCLES));
+
+		awsAccesskeyID = props.get(AmazonKinesisSinkConnector.AWS_ACCESS_KEY_ID);
+
+		awsSecretKey = props.get(AmazonKinesisSinkConnector.AWS_SECRET_ACCESS_KEY);
+
+		awsCloudWatchEndpoint = props.get(AmazonKinesisSinkConnector.AWS_CLOUDWATCH_ENDPOINT);
+
+		awsCloudWatchPort = props.get(AmazonKinesisSinkConnector.AWS_CLOUDWATCH_PORT);
 
 		if (!singleKinesisProducerPerPartition)
 			kinesisProducer = getKinesisProducer();
@@ -343,7 +390,22 @@ public class AmazonKinesisSinkTask extends SinkTask {
 	private KinesisProducer getKinesisProducer() {
 		KinesisProducerConfiguration config = new KinesisProducerConfiguration();
 		config.setRegion(regionName);
-		config.setCredentialsProvider(IAMUtility.createCredentials(regionName, roleARN, roleExternalID, roleSessionName, roleDurationSeconds));
+		if (StringUtils.isNullOrEmpty(roleARN))
+			config.setCredentialsProvider(createCredentialsUsingAWSKeys(awsAccesskeyID, awsSecretKey));
+		else
+			config.setCredentialsProvider(IAMUtility.createCredentials(regionName, roleARN, roleExternalID,
+					roleSessionName, roleDurationSeconds));
+
+		if (!StringUtils.isNullOrEmpty(awsCloudWatchEndpoint)) {
+			System.out.println("CloudWatch Endpoint: " + awsCloudWatchEndpoint);
+			config.setCloudwatchEndpoint(awsCloudWatchEndpoint);
+		}
+
+		if (!StringUtils.isNullOrEmpty(awsCloudWatchPort)) {
+			System.out.println("CloudWatch Port: " + awsCloudWatchPort);
+			config.setCloudwatchPort(Integer.parseInt(awsCloudWatchPort));
+		}
+
 		config.setMaxConnections(maxConnections);
 		if (!StringUtils.isNullOrEmpty(kinesisEndpoint))
 			config.setKinesisEndpoint(kinesisEndpoint);

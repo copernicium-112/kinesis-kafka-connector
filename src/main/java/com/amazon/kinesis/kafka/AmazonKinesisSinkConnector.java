@@ -33,17 +33,17 @@ public class AmazonKinesisSinkConnector extends SinkConnector {
 	public static final String AGGREGATION_ENABLED = "aggregation";
 
 	public static final String USE_PARTITION_AS_HASH_KEY = "usePartitionAsHashKey";
-	
+
 	public static final String FLUSH_SYNC = "flushSync";
-	
+
 	public static final String SINGLE_KINESIS_PRODUCER_PER_PARTITION = "singleKinesisProducerPerPartition";
-	
-	public static final String PAUSE_CONSUMPTION = "pauseConsumption"; 
-	
+
+	public static final String PAUSE_CONSUMPTION = "pauseConsumption";
+
 	public static final String OUTSTANDING_RECORDS_THRESHOLD = "outstandingRecordsThreshold";
-	
+
 	public static final String SLEEP_PERIOD = "sleepPeriod";
-	
+
 	public static final String SLEEP_CYCLES = "sleepCycles";
 
 	public static final String ROLE_ARN = "roleARN";
@@ -55,6 +55,14 @@ public class AmazonKinesisSinkConnector extends SinkConnector {
 	public static final String ROLE_DURATION_SECONDS = "roleDurationSeconds";
 
 	public static final String KINESIS_ENDPOINT = "kinesisEndpoint";
+
+	public static final String AWS_ACCESS_KEY_ID = "awsAccesskeyID";
+
+	public static final String AWS_SECRET_ACCESS_KEY = "awsSecretKey";
+
+	public static final String AWS_CLOUDWATCH_ENDPOINT = "awsCloudWatchEndpoint";
+
+	public static final String AWS_CLOUDWATCH_PORT = "awsCloudWatchPort";
 
 	private String region;
 
@@ -87,18 +95,26 @@ public class AmazonKinesisSinkConnector extends SinkConnector {
 	private String aggregation;
 
 	private String usePartitionAsHashKey;
-	
+
 	private String flushSync;
-	
-	private String singleKinesisProducerPerPartition; 
-	
+
+	private String singleKinesisProducerPerPartition;
+
 	private String pauseConsumption;
-	
+
 	private String outstandingRecordsThreshold;
-	
+
 	private String sleepPeriod;
-	
+
 	private String sleepCycles;
+
+	private String awsAccesskeyID;
+
+	private String awsSecretKey;
+
+	private String awsCloudWatchEndpoint;
+
+	private String awsCloudWatchPort;
 
 	@Override
 	public void start(Map<String, String> props) {
@@ -124,6 +140,10 @@ public class AmazonKinesisSinkConnector extends SinkConnector {
 		outstandingRecordsThreshold = props.get(OUTSTANDING_RECORDS_THRESHOLD);
 		sleepPeriod = props.get(SLEEP_PERIOD);
 		sleepCycles = props.get(SLEEP_CYCLES);
+		awsAccesskeyID = props.get(AWS_ACCESS_KEY_ID);
+		awsSecretKey = props.get(AWS_SECRET_ACCESS_KEY);
+		awsCloudWatchEndpoint = props.get(AWS_CLOUDWATCH_ENDPOINT);
+		awsCloudWatchPort = props.get(AWS_CLOUDWATCH_PORT);
 	}
 
 	@Override
@@ -210,37 +230,49 @@ public class AmazonKinesisSinkConnector extends SinkConnector {
 				config.put(USE_PARTITION_AS_HASH_KEY, usePartitionAsHashKey);
 			else
 				config.put(USE_PARTITION_AS_HASH_KEY, "false");
-			
-			if(flushSync != null)
+
+			if (flushSync != null)
 				config.put(FLUSH_SYNC, flushSync);
 			else
 				config.put(FLUSH_SYNC, "true");
-			
-			if(singleKinesisProducerPerPartition != null)
+
+			if (singleKinesisProducerPerPartition != null)
 				config.put(SINGLE_KINESIS_PRODUCER_PER_PARTITION, singleKinesisProducerPerPartition);
 			else
 				config.put(SINGLE_KINESIS_PRODUCER_PER_PARTITION, "false");
-			
-			if(pauseConsumption != null)
+
+			if (pauseConsumption != null)
 				config.put(PAUSE_CONSUMPTION, pauseConsumption);
 			else
 				config.put(PAUSE_CONSUMPTION, "true");
-			
-			if(outstandingRecordsThreshold != null)
+
+			if (outstandingRecordsThreshold != null)
 				config.put(OUTSTANDING_RECORDS_THRESHOLD, outstandingRecordsThreshold);
 			else
 				config.put(OUTSTANDING_RECORDS_THRESHOLD, "500000");
-			
-			if(sleepPeriod != null)
+
+			if (sleepPeriod != null)
 				config.put(SLEEP_PERIOD, sleepPeriod);
 			else
 				config.put(SLEEP_PERIOD, "1000");
-			
-			if(sleepCycles != null)
+
+			if (sleepCycles != null)
 				config.put(SLEEP_CYCLES, sleepCycles);
 			else
 				config.put(SLEEP_CYCLES, "10");
-			
+
+			if (awsAccesskeyID != null)
+				config.put(AWS_ACCESS_KEY_ID, awsAccesskeyID);
+
+			if (awsSecretKey != null)
+				config.put(AWS_SECRET_ACCESS_KEY, awsSecretKey);
+
+			if (awsCloudWatchEndpoint != null)
+				config.put(AWS_CLOUDWATCH_ENDPOINT, awsCloudWatchEndpoint);
+
+			if (awsCloudWatchPort != null)
+				config.put(AWS_CLOUDWATCH_PORT, awsCloudWatchPort);
+
 			configs.add(config);
 
 		}
