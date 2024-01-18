@@ -57,5 +57,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: yazhinban/kinesis-kafka-connector:v1.${{ env.COMMIT_COUNT }}
+          tags: |
+            yazhinban/kinesis-kafka-connector:v1.${{ env.COMMIT_COUNT }}
+            yazhinban/kinesis-kafka-connector:latest
 
