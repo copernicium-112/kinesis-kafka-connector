@@ -1,6 +1,8 @@
 FROM maven AS builder
 
-RUN mvn package 
+COPY pom.xml .
+COPY src/ /src/
+RUN mvn package
 
 FROM confluentinc/cp-kafka-connect:7.4.3
 
