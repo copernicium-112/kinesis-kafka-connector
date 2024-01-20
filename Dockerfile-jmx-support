@@ -1,3 +1,3 @@
 FROM yazhinban/kinesis-kafka-connector:latest
 
-ADD https://repo.maven.apache.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.20.0/jmx_prometheus_javaagent-0.20.0.jar /opt/jmx_prometheus_javaagent-0.20.0.jar
+ADD https://repo.maven.apache.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.20.0/jmx_prometheus_javaagent-0.20.0.jar /opt/jmx_prometheus_javaagent.jar
