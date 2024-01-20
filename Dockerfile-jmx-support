@@ -1,0 +1,17 @@
+FROM maven AS builder
+
+COPY pom.xml .
+COPY src/ /src/
+RUN mvn package
+
+ADD https://repo.maven.apache.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.20.0/jmx_prometheus_javaagent-0.20.0.jar jmx_prometheus_javaagent-0.20.0.jar
+
+FROM confluentinc/cp-kafka-connect:7.4.3
+
+ENV CONNECT_PLUGIN_PATH="/usr/share/confluent-hub-components"
+
+COPY --from=builder target/kinesis-kafka-connector.jar /usr/share/confluent-hub-components/kinesis/kinesis-kafka-connector.jar
+
+COPY --from=builder target/libs /usr/share/confluent-hub-components/kinesis/libs
+
+COPY --from=builder jmx_prometheus_javaagent-0.20.0.jar /opt/jmx_prometheus_javaagent-0.20.0.jar
