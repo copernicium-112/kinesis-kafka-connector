@@ -4,7 +4,7 @@ COPY pom.xml .
 COPY src/ /src/
 RUN mvn package
 
-FROM confluentinc/cp-kafka-connect:7.4.3
+FROM confluentinc/cp-kafka-connect:7.5.3
 
 ENV CONNECT_PLUGIN_PATH="/usr/share/confluent-hub-components"
 
